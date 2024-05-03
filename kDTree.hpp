@@ -3,6 +3,9 @@
 /* TODO: Please design your data structure carefully so that you can work with the given dataset
  *       in this assignment. The below structures are just some suggestions.
  */
+
+size_t ELEMENT_INDEX = 0;
+
 struct kDTreeNode
 {
     vector<int> data;
@@ -25,12 +28,16 @@ private:
 
     // some drapper function 
     int height(kDTreeNode * root) const;
+    double distance(const vector<int> &v1, const vector<int> &v2) const;
     int leafCount(kDTreeNode * root) const;
     void traverse(kDTreeNode * root, void (*f)(kDTreeNode *)) const;
     void traverse(kDTreeNode * root, kDTreeNode * newNode, void (*f)(kDTreeNode * curNode, kDTreeNode * newNode)) const;
     void inorderTraversal(kDTreeNode * root) const;
     void preorderTraversal(kDTreeNode * root) const;
     void postorderTraversal(kDTreeNode * root) const;
+    void remove(kDTreeNode * &root, const vector<int> &point, int axis);
+    void buildTree(kDTreeNode * &root, const vector<vector<int>> &pointList, int axis);
+    void nearestNeighbour(kDTreeNode * root, const vector<int> &target, kDTreeNode *best, int axis);
 public:
     kDTree(int k = 2);
     ~kDTree();
@@ -55,6 +62,7 @@ public:
     // DFS postorder
     void traverse(void (*f)(kDTreeNode *)) const;  
     void traverse(kDTreeNode * newNode, void (*f)(kDTreeNode *, kDTreeNode *)) const;  
+    kDTreeNode *findMin(kDTreeNode * root, int d, int axis);
 };
 
 class kNN
@@ -73,3 +81,8 @@ public:
 };
 
 // Please add more or modify as needed
+bool operator<(const std::vector<int> &v1, const std::vector<int> &v2) {
+    return v1[ELEMENT_INDEX] < v2[ELEMENT_INDEX];
+}
+template<class T> void merge(T * arr, int l, int m, int r);
+template<class T> void mergeSort(T * arr, int l, int r);

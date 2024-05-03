@@ -152,33 +152,162 @@ int kDTree::leafCount() const
 
 void kDTree::insert(const vector<int> &point)
 {
-
+    int axis = 0;
+    kDTreeNode **pT = &root;
+    while (*pT)
+    {
+        if (((*pT)->data)[axis % k] > point[axis % k]) pT = &((*pT)->left);
+        else pT = &((*pT)->right);
+        axis++;
+    }
+    *pT = new kDTreeNode(point);
+    size++;
 }
+
+kDTreeNode *kDTree::findMin(kDTreeNode * root, int d, int axis)
+{
+    if (!root) return nullptr;
+    if (axis % k == d)
+    {
+        if (!root->left) return root;
+        return findMin(root->left, d, axis + 1);
+    }
+    kDTreeNode *left = findMin(root->left, d, axis + 1);
+    kDTreeNode *right = findMin(root->right, d, axis + 1);
+    kDTreeNode *minNode = (left->data[d] < root->data[d]) ? left : root;
+    minNode = (right->data[d] < minNode->data[d]) ? right : minNode;
+    return minNode;
+}
+
+
+void kDTree::remove(kDTreeNode * &root, const vector<int> &point, int axis)
+{
+    if (!root) return;
+    if (root->data == point)
+    {
+        if (root->right)
+        {
+            kDTreeNode *pTemp = findMin(root->right, axis, axis + 1);
+            root->data = pTemp->data;
+            remove(root->right, pTemp->data, axis + 1);
+            return;
+        }
+        else if (root->left)
+        {
+            kDTreeNode *pTemp = findMin(root->left, axis, axis + 1);
+            root->data = pTemp->data;
+            root->right = root->left;
+            root->left = nullptr;
+            remove(root->right, pTemp->data, axis + 1);
+            return;
+        }
+        else
+        {
+            delete root;
+            root = nullptr;
+            size--;
+        } 
+    }
+    else if ((root->data)[axis % k] > point[axis % k])
+        remove(root->left, point, axis + 1);
+    else
+        remove(root->right, point, axis + 1);
+}
+
 void kDTree::remove(const vector<int> &point)
 {
-
+    return remove(root, point, 0);
 }
+
 bool kDTree::search(const vector<int> &point)
 {
-
+    int axis = 0;
+    kDTreeNode *pT = root;
+    while (pT)
+    {
+        if (pT->data == point) return true;
+        if ((pT->data)[axis % k] > point[axis % k]) pT = pT->left;
+        else pT = pT->right;
+        axis++;
+    }
+    return false;
 }
+
+void kDTree::buildTree(kDTreeNode *&root, 
+                       const std::vector<std::vector<int>> &pointList, int axis)
+{
+    if (pointList.empty()) return;
+    if (pointList.size() == 1)
+    {
+        root = new kDTreeNode(pointList[0]);
+        return;
+    }
+    int n = pointList.size();
+    ELEMENT_INDEX = axis % k;
+    mergeSort(&pointList, 0, n - 1);
+    root = new kDTreeNode(pointList[n / 2]);
+    std::vector<std::vector<int>> leftList(pointList.begin(), pointList.begin() + n / 2);
+    std::vector<std::vector<int>> rightList(pointList.begin() + n / 2 + 1, pointList.end());
+    buildTree(root->left, leftList, axis + 1);
+    buildTree(root->right, rightList, axis + 1);
+}
+
 void kDTree::buildTree(const std::vector<std::vector<int>> &pointList)
 {
-
+    return buildTree(root, pointList, 0);
 }
+
+double kDTree::distance(const std::vector<int> &a, const std::vector<int> &b) const
+{
+    double sum = 0;
+    for (int i = 0; i < (int) a.size(); i++)
+    {
+        sum += (a[i] - b[i]) * (a[i] - b[i]);
+    }
+    return sqrt(sum);
+}
+
+void kDTree::nearestNeighbour(kDTreeNode *root, const std::vector<int> &target, kDTreeNode *best, int axis)
+{
+    if (!root) return;
+    if ((root->data)[axis % k] < target[axis % k])
+    {
+        nearestNeighbour(root->right, target, best, axis + 1);
+        if (!best || distance(root->data, target) < distance(best->data, target)) best = root;
+        if (best && abs((root->data)[axis % k] - target[axis % k]) < distance(best->data, target))
+            nearestNeighbour(root->left, target, best, axis + 1);
+    }
+    else
+    {
+        nearestNeighbour(root->left, target, best, axis + 1);
+        if (!best || distance(root->data, target) < distance(best->data, target)) best = root;
+        if (best && abs((root->data)[axis % k] - target[axis % k]) < distance(best->data, target))
+            nearestNeighbour(root->right, target, best, axis + 1);
+    }
+}
+
 void kDTree::nearestNeighbour(const std::vector<int> &target, kDTreeNode *best)
 {
-
+    return nearestNeighbour(root, target, best, 0);
 }
 void kDTree::kNearestNeighbour(const std::vector<int> &target, int k, std::vector<kDTreeNode *> &bestList)
 {
-
+    while (k--)
+    {
+        kDTreeNode *best = nullptr;
+        nearestNeighbour(target, best);
+        bestList.push_back(best);
+        remove(best->data);
+    }
 }
 
 // kNN part
 
 kNN::kNN(int k)
 {
+    this->k = k;
+    X_train = nullptr;
+    y_train = nullptr;
 
 }
 void kNN::fit(Dataset &X_train, Dataset &y_train)
@@ -192,4 +321,48 @@ Dataset kNN::predict(Dataset &X_test)
 double kNN::score(const Dataset &y_test, const Dataset &y_pred)
 {
 
+}
+
+template<class T>
+void merge(T *arr, int l, int m, int r)
+{
+    T * tempL = new T[m - l + 1];
+    for (int i = l; i < m + 1; i++)
+    {
+        tempL[i - l] = arr[i];
+    }
+    int i = 0, j = m + 1, k = l;
+    while (i < m - l + 1 && j < r + 1)
+    {
+        if (tempL[i] < arr[j])
+        {
+            arr[k] = tempL[i];
+            i++;
+        }
+        else 
+        {
+            arr[k] = arr[j];
+            j++;
+        }
+        k++;
+    }
+    while (i < m - l + 1)
+    {
+        arr[k] = tempL[i];
+        i++;
+        k++;
+    }
+    delete[] tempL;
+}
+
+template<class T>
+void mergeSort(T *arr, int l, int r)
+{
+    if (l < r)
+    {
+        int m = (l + r) / 2;
+        mergeSort(arr, l, m);
+        mergeSort(arr, m + 1, r);
+        merge(arr, l, m, r);
+    }
 }
