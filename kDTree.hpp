@@ -4,18 +4,26 @@
  *       in this assignment. The below structures are just some suggestions.
  */
 
-size_t ELEMENT_INDEX = 0;
+extern size_t ELEMENT_INDEX;
 
 struct kDTreeNode
 {
     vector<int> data;
     kDTreeNode *left;
     kDTreeNode *right;
+    int label;
     kDTreeNode(vector<int> data, kDTreeNode *left = nullptr, kDTreeNode *right = nullptr)
     {
         this->data = data;
         this->left = left;
         this->right = right;
+    }
+    kDTreeNode(vector<int> data, int label, kDTreeNode *left = nullptr, kDTreeNode *right = nullptr)
+    {
+        this->data = data;
+        this->left = left;
+        this->right = right;
+        this->label = label;
     }
 };
 
@@ -25,6 +33,20 @@ private:
     int k;
     kDTreeNode *root;
     int size;
+    struct ListWithLabel
+    {
+        vector<int> data;
+        int label;
+        ListWithLabel(vector<int> data, int label)
+        {
+            this->data = data;
+            this->label = label;
+        }
+        bool operator<(const ListWithLabel &other) const
+        {
+            return data < other.data;
+        }
+    };
 
     // some drapper function 
     int height(kDTreeNode * root) const;
@@ -36,7 +58,8 @@ private:
     void preorderTraversal(kDTreeNode * root) const;
     void postorderTraversal(kDTreeNode * root) const;
     void remove(kDTreeNode * &root, const vector<int> &point, int axis);
-    void buildTree(kDTreeNode * &root, const vector<vector<int>> &pointList, int axis);
+    void buildTree(kDTreeNode * &root, vector<vector<int>> &pointList, int axis);
+    void buildTree(kDTreeNode * &root, vector<ListWithLabel> &pointList, int axis);
     void nearestNeighbour(kDTreeNode * root, const vector<int> &target, kDTreeNode *best, int axis);
 public:
     kDTree(int k = 2);
@@ -53,13 +76,15 @@ public:
     int leafCount() const;
     
     void insert(const vector<int> &point);
+    void insert(const vector<int> &point, int label);
     void remove(const vector<int> &point);
     bool search(const vector<int> &point);
     void buildTree(const vector<vector<int>> &pointList);
+    void buildTree(const vector<vector<int>> &pointList, vector<int> &labelList);
     void nearestNeighbour(const vector<int> &target, kDTreeNode *best);
     void kNearestNeighbour(const vector<int> &target, int k, vector<kDTreeNode *> &bestList);
     // extra function 
-    // DFS postorder
+    // DFS preorder
     void traverse(void (*f)(kDTreeNode *)) const;  
     void traverse(kDTreeNode * newNode, void (*f)(kDTreeNode *, kDTreeNode *)) const;  
     kDTreeNode *findMin(kDTreeNode * root, int d, int axis);
@@ -71,8 +96,11 @@ private:
     int k;
     Dataset *X_train;
     Dataset *y_train;
+    kDTree *treeData;
     int numClasses;
-
+    std::vector<std::vector<int>> convertListListToVectorVector(const std::list<std::list<int>>& list_of_lists);
+    template<typename T> std::list<T> convertVectorToList(const std::vector<T>& input_list);
+    template<typename T> std::vector<T> convertListToVector(const std::list<T>& input_list);
 public:
     kNN(int k = 5);
     void fit(Dataset &X_train, Dataset &y_train);
@@ -81,7 +109,7 @@ public:
 };
 
 // Please add more or modify as needed
-bool operator<(const std::vector<int> &v1, const std::vector<int> &v2) {
+inline bool operator<(const std::vector<int> &v1, const std::vector<int> &v2) {
     return v1[ELEMENT_INDEX] < v2[ELEMENT_INDEX];
 }
 template<class T> void merge(T * arr, int l, int m, int r);

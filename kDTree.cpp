@@ -30,9 +30,9 @@ void kDTree::traverse(kDTreeNode * root, void (*f)(kDTreeNode *)) const
 void kDTree::traverse(kDTreeNode * root, kDTreeNode * newNode, void (*f)(kDTreeNode * curNode, kDTreeNode * newNode)) const
 {
     if (!root) return;
+    f(root, newNode);
     traverse(root->left, newNode->left, f);
     traverse(root->right, newNode->right, f);
-    f(root, newNode);
 }
 
 void kDTree::traverse(void (*f)(kDTreeNode *)) const
@@ -53,6 +53,8 @@ const kDTree &kDTree::operator=(const kDTree &other)
     [](kDTreeNode * root, kDTreeNode *newNode) 
     {
         newNode = new kDTreeNode(root->data);
+        //
+        newNode->label = root->label;
     });
     this->size = other.size;
     return *newTree;
@@ -64,6 +66,8 @@ kDTree::kDTree(const kDTree &other)
     [](kDTreeNode * root, kDTreeNode *newNode) 
     {
         newNode = new kDTreeNode(root->data);
+                //
+        newNode->label = root->label;
     });
     this->k = other.k;
     this->size = other.size;
@@ -164,6 +168,22 @@ void kDTree::insert(const vector<int> &point)
     size++;
 }
 
+void kDTree::insert(const vector<int> &point, int label)
+{
+    int axis = 0;
+    kDTreeNode **pT = &root;
+    while (*pT)
+    {
+        if (((*pT)->data)[axis % k] > point[axis % k]) pT = &((*pT)->left);
+        else pT = &((*pT)->right);
+        axis++;
+    }
+    *pT = new kDTreeNode(point);
+    (*pT)->label = label;
+    size++;
+}
+
+
 kDTreeNode *kDTree::findMin(kDTreeNode * root, int d, int axis)
 {
     if (!root) return nullptr;
@@ -234,7 +254,7 @@ bool kDTree::search(const vector<int> &point)
 }
 
 void kDTree::buildTree(kDTreeNode *&root, 
-                       const std::vector<std::vector<int>> &pointList, int axis)
+                       std::vector<std::vector<int>> &pointList, int axis)
 {
     if (pointList.empty()) return;
     if (pointList.size() == 1)
@@ -252,10 +272,38 @@ void kDTree::buildTree(kDTreeNode *&root,
     buildTree(root->right, rightList, axis + 1);
 }
 
+void kDTree::buildTree(kDTreeNode * &root, vector<ListWithLabel> &pointList, int axis)
+{
+    if (pointList.empty()) return;
+    if (pointList.size() == 1)
+    {
+        root = new kDTreeNode(pointList[0].data, pointList[0].label);
+        return;
+    }
+    int n = pointList.size();
+    ELEMENT_INDEX = axis % k;
+    mergeSort(&pointList, 0, n - 1);
+    root = new kDTreeNode(pointList[n / 2].data, pointList[n / 2].label);
+    std::vector<std::vector<int>> leftList(pointList.begin(), pointList.begin() + n / 2);
+    std::vector<std::vector<int>> rightList(pointList.begin() + n / 2 + 1, pointList.end());
+    buildTree(root->left, leftList, axis + 1);
+    buildTree(root->right, rightList, axis + 1);
+}
+
 void kDTree::buildTree(const std::vector<std::vector<int>> &pointList)
 {
-    return buildTree(root, pointList, 0);
+    vector<vector<int>> list = pointList;
+    return buildTree(root, list, 0);
 }
+
+void kDTree::buildTree(const vector<vector<int>> &pointList, vector<int> &labelList)
+{
+    vector<ListWithLabel> list;
+    for (int i = 0; i < (int) pointList.size(); i++)
+        list.push_back(ListWithLabel(pointList[i], labelList[i]));
+    return buildTree(root, list, 0);
+}
+
 
 double kDTree::distance(const std::vector<int> &a, const std::vector<int> &b) const
 {
@@ -292,35 +340,83 @@ void kDTree::nearestNeighbour(const std::vector<int> &target, kDTreeNode *best)
 }
 void kDTree::kNearestNeighbour(const std::vector<int> &target, int k, std::vector<kDTreeNode *> &bestList)
 {
+    kDTree * newTree = new kDTree(*this);
     while (k--)
     {
         kDTreeNode *best = nullptr;
-        nearestNeighbour(target, best);
+        newTree->nearestNeighbour(target, best);
         bestList.push_back(best);
-        remove(best->data);
+        newTree->remove(best->data);
     }
+    delete newTree;
 }
 
 // kNN part
 
+std::vector<std::vector<int>> kNN::convertListListToVectorVector(const std::list<std::list<int>>& list_of_lists) {
+    std::vector<std::vector<int>> result;
+    // Duyệt qua từng danh sách trong list_of_lists
+    for (const auto& inner_list : list_of_lists) {
+        // Tạo một vector từ danh sách con và thêm vào vector kết quả
+        result.push_back(std::vector<int>(inner_list.begin(), inner_list.end()));
+    }
+    return result;
+}
+
+template<typename T>
+std::list<T> kNN::convertVectorToList(const std::vector<T>& input_list) {
+    return std::list<T>(input_list.begin(), input_list.end());
+}
+
+template<typename T>
+std::vector<T> kNN::convertListToVector(const std::list<T>& input_list) {
+    return std::vector<T>(input_list.begin(), input_list.end());
+}
+
 kNN::kNN(int k)
 {
     this->k = k;
-    X_train = nullptr;
-    y_train = nullptr;
+    this->X_train = nullptr;
+    this->y_train = nullptr;
 
 }
 void kNN::fit(Dataset &X_train, Dataset &y_train)
 {
-
+    this->X_train = new Dataset(X_train);
+    this->y_train = new Dataset(y_train);
+    this->treeData = new kDTree((this->X_train->data).size());
+    vector<vector<int>> pointList = convertListListToVectorVector(this->X_train->data);
+    vector<int> labelList;
+    for (auto i : y_train.data) labelList.push_back(*(i.begin()));
+    treeData->buildTree(pointList, labelList);
 }
 Dataset kNN::predict(Dataset &X_test)
 {
-
+    Dataset * y_pred = new Dataset();
+    y_pred->columnName.push_back("label");
+    vector<vector<int>> pointList = convertListListToVectorVector(X_test.data); 
+    for (auto i : pointList)
+    {
+        vector<kDTreeNode *> best;
+        treeData->kNearestNeighbour(i, k, best);
+        int countLabel[10] = {0};
+        for (auto j : best) countLabel[j->label]++;
+        int maxIndex = 0;
+        for (int j = 1; j < 10; j++)
+            if (countLabel[j] > countLabel[maxIndex]) maxIndex = j;
+        y_pred->data.push_back(list<int>{maxIndex});
+    }
+    return *y_pred;
 }
 double kNN::score(const Dataset &y_test, const Dataset &y_pred)
 {
-
+    int n = y_test.data.size();
+    int count = 0;
+    auto it1 = y_test.data.begin();
+    auto it2 = y_pred.data.begin();
+    for (it1, it2; it1 != y_pred.data.end(); it1++, it2++)
+        if (*(it1->begin()) == *(it2->begin())) count++;
+    return (double) count / n;
 }
 
 template<class T>
