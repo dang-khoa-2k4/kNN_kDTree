@@ -284,8 +284,8 @@ void kDTree::buildTree(kDTreeNode * &root, vector<ListWithLabel> &pointList, int
     ELEMENT_INDEX = axis % k;
     mergeSort(&pointList, 0, n - 1);
     root = new kDTreeNode(pointList[n / 2].data, pointList[n / 2].label);
-    std::vector<std::vector<int>> leftList(pointList.begin(), pointList.begin() + n / 2);
-    std::vector<std::vector<int>> rightList(pointList.begin() + n / 2 + 1, pointList.end());
+    std::vector<ListWithLabel> leftList(pointList.begin(), pointList.begin() + n / 2);
+    std::vector<ListWithLabel> rightList(pointList.begin() + n / 2 + 1, pointList.end());
     buildTree(root->left, leftList, axis + 1);
     buildTree(root->right, rightList, axis + 1);
 }
@@ -378,7 +378,7 @@ kNN::kNN(int k)
     this->k = k;
     this->X_train = nullptr;
     this->y_train = nullptr;
-
+    this->treeData = nullptr;
 }
 void kNN::fit(Dataset &X_train, Dataset &y_train)
 {
