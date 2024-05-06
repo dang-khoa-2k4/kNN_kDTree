@@ -3,13 +3,18 @@
         {
             "type": "cppbuild",
             "label": "C/C++: g++.exe build active file",
-            "command": "C:\\MinGW\\bin\\g++.exe",
+            "command": "C:\\msys64\\ucrt64\\bin\\g++.exe",
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                "${file}",
+                "main.cpp",     // Tệp tin chính
+                "kDTree.cpp",   // Tệp tin kDTree
+                "Dataset.o",    // Tệp tin đối tượng Dataset
                 "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+                "${fileDirname}\\main.exe", // Đường dẫn và tên của tệp thực thi
+                "-I",
+                ".",            // Thư mục hiện tại
+                "-std=c++11"
             ],
             "options": {
                 "cwd": "${fileDirname}"

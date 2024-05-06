@@ -61,10 +61,10 @@ void tc4()
 
     train_test_split(feature, label, 0.2, X_train, X_test, y_train, y_test);
     knn.fit(X_train, y_train);
-    Dataset y_pred = knn.predict(X_test);
+    // Dataset y_pred = knn.predict(X_test);
 
     std::cout << "y_pred" << endl;
-    y_pred.printHead(10, 10);
+    // y_pred.printHead(10, 10);
     std::cout << endl;
     std::cout << "y_test" << endl;
     y_test.printHead(10, 10);
@@ -92,7 +92,7 @@ void tc5()
 
 int main(int argc, const char *argv[])
 {
-    tc1();
+    tc4();
 
     return 0;
 }
