@@ -419,7 +419,7 @@ double kNN::score(const Dataset &y_test, const Dataset &y_pred)
     int count = 0;
     auto it1 = y_test.data.begin();
     auto it2 = y_pred.data.begin();
-    for (it1, it2; it1 != y_pred.data.end(); it1++, it2++)
+   for (; it1 != y_test.data.end() && it2 != y_pred.data.end(); ++it1, ++it2)
         if (*(it1->begin()) == *(it2->begin())) count++;
     return (double) count / n;
 }

@@ -27,9 +27,17 @@ struct kDTreeNode
     }
     ~kDTreeNode()
     {
-        delete left;
-        delete right;
         data.clear();
+        if (!left)
+        {
+            delete left;
+            left = nullptr;
+        }
+        if (!right)
+        {
+            delete right;
+            right = nullptr;
+        }
         label = -1;
     }
 };
