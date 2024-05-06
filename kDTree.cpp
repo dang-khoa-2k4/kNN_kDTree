@@ -194,8 +194,8 @@ kDTreeNode *kDTree::findMin(kDTreeNode * root, int d, int axis)
     }
     kDTreeNode *left = findMin(root->left, d, axis + 1);
     kDTreeNode *right = findMin(root->right, d, axis + 1);
-    kDTreeNode *minNode = (left->data[d] < root->data[d]) ? left : root;
-    minNode = (right->data[d] < minNode->data[d]) ? right : minNode;
+    kDTreeNode *minNode = (left && left->data[d] < root->data[d]) ? left : root;
+    minNode = (right && right->data[d] < minNode->data[d]) ? right : minNode;
     return minNode;
 }
 
