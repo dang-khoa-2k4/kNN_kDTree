@@ -40,6 +40,36 @@ struct kDTreeNode
         }
         label = -1;
     }
+    bool operator!=(const kDTreeNode &other) const
+    {
+        return data != other.data;
+    }
+    bool operator==(const kDTreeNode &other) const
+    {
+        return data == other.data;
+    }
+    const kDTreeNode operator&=(const kDTreeNode &other)
+    {
+        data = other.data;
+        left = other.left;
+        right = other.right;
+        label = other.label;
+        return *this;
+    }
+    friend ostream &operator<<(ostream &os, const kDTreeNode &node)
+    {
+        os << "(";
+        for (int i = 0; i < node.data.size(); i++)
+        {
+            os << node.data[i];
+            if (i != node.data.size() - 1)
+            {
+                os << ", ";
+            }
+        }
+        os << ")";
+        return os;
+    }
 };
 
 class kDTree
@@ -92,6 +122,7 @@ private:
     void buildTree(kDTreeNode * &root, vector<vector<int>> &pointList, int axis);
     void buildTree(kDTreeNode * &root, vector<ListWithLabel> &pointList, int axis);
     void nearestNeighbour(kDTreeNode * root, const vector<int> &target, kDTreeNode *&best, int axis);
+    void nearestNeighbourAfter(kDTreeNode *root, const std::vector<int> &target, kDTreeNode *&best, vector<kDTreeNode*> &bestBefore, int axis);
 public:
     kDTree(int k = 2);
     ~kDTree();
@@ -119,6 +150,7 @@ public:
     void traverse(void (*f)(kDTreeNode *)) const;  
     void traverse(kDTreeNode *& newNode, void (*f)(kDTreeNode *, kDTreeNode *&)) const;  
     kDTreeNode *findMin(kDTreeNode * root, int d, int axis);
+    void nearestNeighbourAfter(const vector<int> &target, kDTreeNode *&best, vector<kDTreeNode*> &bestNodeBefore);
 };
 
 class kNN
